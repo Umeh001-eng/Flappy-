@@ -1,273 +1,1471 @@
+
+
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Flappy Bird</title>
+
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+
+<title>Flappy Dove 3D - Dark Sky</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
 
-body{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  background:#000;
-}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+
+html,body{width:100%;height:100%;overflow:hidden;background:#030610}
+
+body{display:flex;align-items:center;justify-content:center}
 
 #gameContainer{
-  width:100%;
-  max-width:420px;
-  height:700px;
-  position:relative;
-  overflow:hidden;
-  border-radius:18px;
+
+ position:relative;width:min(100vw,420px);height:min(100dvh,750px);
+
+ overflow:hidden;background:#071020;isolation:isolate;
+
+ box-shadow:0 0 40px #000;
+
 }
 
-canvas{width:100%;height:100%;display:block}
+canvas{display:block;width:100%;height:100%;touch-action:none}
 
-#overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  z-index:10;
+#topBar{
+
+ position:absolute;top:12px;left:12px;right:12px;z-index:5;
+
+ display:flex;justify-content:space-between;gap:8px;
+
 }
 
-button{
-  margin-top:15px;
-  padding:12px 18px;
-  border:none;
-  border-radius:10px;
-  background:#ffd166;
-  font-weight:bold;
-  cursor:pointer;
+.topButton{
+
+ border:1px solid #b8d9ed55;border-radius:25px;padding:10px 12px;
+
+ background:#071426dc;color:#e5f5ff;font-size:11px;
+
+ font-weight:900;letter-spacing:.4px;box-shadow:0 3px 12px #0008
+
 }
 
 #scoreBoard{
-  position:absolute;
-  top:15px;
-  width:100%;
-  text-align:center;
-  color:#fff;
-  font-size:40px;
-  font-weight:bold;
-  text-shadow:2px 2px 4px #000;
+
+ position:absolute;top:67px;width:100%;text-align:center;z-index:3;
+
+ font-size:48px;font-weight:900;color:#f0f5ff;
+
+ text-shadow:0 0 12px #93cfff,0 4px 12px #000;
+
+ pointer-events:none
+
 }
 
-#soundBtn{
-  position:absolute;
-  top:10px;
-  left:10px;
-  z-index:20;
-  padding:8px 10px;
+#hint{
+
+ position:absolute;bottom:14px;width:100%;text-align:center;
+
+ color:#d8e7f8;font-size:11px;letter-spacing:1.5px;
+
+ text-shadow:0 2px 5px #000;pointer-events:none;z-index:3
+
 }
+
+#overlay{
+
+ position:absolute;inset:0;z-index:10;display:flex;
+
+ flex-direction:column;align-items:center;justify-content:center;
+
+ text-align:center;padding:26px;color:#eff6ff;
+
+ background:linear-gradient(180deg,#02071375,#020713ed)
+
+}
+
+#overlay h1{
+
+ font-size:clamp(31px,9vw,43px);line-height:1.08;
+
+ font-weight:1000;letter-spacing:1px;color:#f1f6ff;
+
+ text-shadow:0 0 20px #7cb9ff8a,0 5px 15px #000
+
+}
+
+#overlay .subtitle{
+
+ margin-top:18px;line-height:1.8;font-size:13px;
+
+ letter-spacing:1px;color:#c3d4e8
+
+}
+
+#startBtn{
+
+ margin-top:28px;border:1px solid #e5f4ff;border-radius:30px;
+
+ padding:15px 35px;background:linear-gradient(135deg,#e7f5ff,#719ac3);
+
+ color:#081426;font-size:16px;font-weight:1000;
+
+ box-shadow:0 0 25px #70b9ff50
+
+}
+
+#overlay .small{font-size:10px;color:#8ea8c4;margin-top:20px;line-height:1.7}
+
 </style>
+
 </head>
 
 <body>
 
 <div id="gameContainer">
 
-<button id="soundBtn">🔊 Sound</button>
+ <div id="topBar">
 
-<canvas id="gameCanvas"></canvas>
+  <button class="topButton" id="soundBtn">🔊 SFX ON</button>
 
-<div id="overlay">
-  <h1>Flappy Bird</h1>
-  <p>Tap / Space to Fly</p>
-  <button id="startBtn">Start</button>
-</div>
+  <button class="topButton" id="musicBtn">♫ MUSIC ON</button>
 
-<div id="scoreBoard">0</div>
+ </div>
+
+ <canvas id="gameCanvas"></canvas>
+
+ <div id="scoreBoard">0</div>
+
+ <div id="hint">TAP TO FLY</div>
+
+ <div id="overlay">
+
+  <h1>FLAPPY DOVE<br>3D</h1>
+
+  <div class="subtitle">
+
+   DARK SKY EDITION<br>
+
+   FLY THROUGH THE MOONLIT WORLD
+
+  </div>
+
+  <button id="startBtn">✦ BEGIN FLIGHT</button>
+
+  <div class="small">CINEMATIC AMBIENCE · WING ANIMATION<br>TAP TO FLY</div>
+
+ </div>
+
 </div>
 
 <script>
 
-// ===== IMAGES =====
-const birdImg = new Image();
-birdImg.src = "https://i.postimg.cc/bw22N8Jw/IMG-3826.png";
+"use strict";
 
-const bgImg = new Image();
-bgImg.src = "https://i.postimg.cc/QdpxyMCy/IMG-3828.png";
+// =======================================
 
-// ===== CANVAS =====
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// FLAPPY DOVE 3D - DARK SKY EDITION
 
-canvas.width = 420;
-canvas.height = 700;
+// Lightweight single-file mobile game
 
-const W = canvas.width;
-const H = canvas.height;
+// =======================================
 
-// ===== UI =====
-const overlay = document.getElementById("overlay");
-const startBtn = document.getElementById("startBtn");
-const scoreBoard = document.getElementById("scoreBoard");
-const soundBtn = document.getElementById("soundBtn");
+const canvas=document.getElementById("gameCanvas");
 
-// ===== AUDIO =====
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let soundOn = true;
+const ctx=canvas.getContext("2d");
 
-function sound(f,d){
-  if(!soundOn) return;
-  const o=audioCtx.createOscillator();
-  const g=audioCtx.createGain();
-  o.frequency.value=f;
-  g.gain.value=0.1;
-  o.connect(g);
-  g.connect(audioCtx.destination);
-  o.start();
-  o.stop(audioCtx.currentTime+d);
+const overlay=document.getElementById("overlay");
+
+const scoreBoard=document.getElementById("scoreBoard");
+
+const hint=document.getElementById("hint");
+
+const soundBtn=document.getElementById("soundBtn");
+
+const musicBtn=document.getElementById("musicBtn");
+
+const W=420,H=750,GROUND=620;
+
+let bird,pipes,score,best=0,playing=false;
+
+let frame=0,lastTime=0,worldTime=0,groundOffset=0;
+
+let soundOn=true,musicOn=true,audioCtx=null,musicTimer=null;
+
+let musicStep=0,particles=[],shake=0;
+
+try{best=Number(localStorage.getItem("flappyDove3DBest")||0)}catch(e){}
+
+function resizeCanvas(){
+
+ const dpr=Math.min(window.devicePixelRatio||1,1.5);
+
+ canvas.width=Math.round(W*dpr);
+
+ canvas.height=Math.round(H*dpr);
+
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+
 }
 
-// ===== GAME =====
-let bird, pipes, frame, score, gravity, playing;
-let bgX = 0;
+resizeCanvas();
 
-// ===== RESET =====
+window.addEventListener("resize",resizeCanvas);
+
+// ---------- AUDIO ENGINE ----------
+
+function initAudio(){
+
+ try{
+
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+  if(audioCtx.state==="suspended")audioCtx.resume();
+
+ }catch(e){}
+
+}
+
+// Gentle, atmospheric cinematic sound.
+
+// All tones are generated locally; no external music file.
+
+function ambientTone(freq,duration,volume,type,delay=0){
+
+ if(!audioCtx)return;
+
+ try{
+
+  const t=audioCtx.currentTime+delay;
+
+  const osc=audioCtx.createOscillator();
+
+  const filter=audioCtx.createBiquadFilter();
+
+  const gain=audioCtx.createGain();
+
+  osc.type=type||"sine";
+
+  osc.frequency.setValueAtTime(freq,t);
+
+  filter.type="lowpass";
+
+  filter.frequency.setValueAtTime(850,t);
+
+  gain.gain.setValueAtTime(.0001,t);
+
+  gain.gain.exponentialRampToValueAtTime(volume,t+.7);
+
+  gain.gain.setValueAtTime(volume,t+Math.max(.8,duration-.8));
+
+  gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
+
+  osc.connect(filter);
+
+  filter.connect(gain);
+
+  gain.connect(audioCtx.destination);
+
+  osc.start(t);
+
+  osc.stop(t+duration+.1);
+
+ }catch(e){}
+
+}
+
+function sfx(freq,duration,type="sine"){
+
+ if(!soundOn)return;
+
+ initAudio();
+
+ if(audioCtx){
+
+  try{
+
+   const t=audioCtx.currentTime;
+
+   const o=audioCtx.createOscillator();
+
+   const g=audioCtx.createGain();
+
+   o.type=type;
+
+   o.frequency.setValueAtTime(freq,t);
+
+   g.gain.setValueAtTime(.06,t);
+
+   g.gain.exponentialRampToValueAtTime(.001,t+duration);
+
+   o.connect(g);g.connect(audioCtx.destination);
+
+   o.start(t);o.stop(t+duration);
+
+  }catch(e){}
+
+ }
+
+}
+
+// New slow ambient chord progression, distinct from the previous tune.
+
+const chords=[
+
+ [146.83,220,293.66,369.99],
+
+ [130.81,196,261.63,329.63],
+
+ [110,164.81,220,293.66],
+
+ [123.47,185,246.94,311.13]
+
+];
+
+function musicTick(){
+
+ if(!playing||!musicOn||!audioCtx)return;
+
+ const chord=chords[Math.floor(musicStep/4)%chords.length];
+
+ const note=musicStep%4;
+
+ // Soft sustained harmony
+
+ if(note===0){
+
+  ambientTone(chord[0]/2,3.8,.018,"sine");
+
+  ambientTone(chord[2],3.4,.012,"triangle",.15);
+
+ }
+
+ // Gentle high notes, like a cinematic bell
+
+ ambientTone(chord[note],1.8,.012,"sine",.05);
+
+ musicStep++;
+
+}
+
+function startMusic(){
+
+ stopMusic();
+
+ if(!musicOn||!playing)return;
+
+ initAudio();
+
+ if(!audioCtx)return;
+
+ musicStep=0;
+
+ musicTick();
+
+ musicTimer=setInterval(musicTick,950);
+
+}
+
+function stopMusic(){
+
+ if(musicTimer){clearInterval(musicTimer);musicTimer=null}
+
+}
+
+musicBtn.addEventListener("click",()=>{
+
+ musicOn=!musicOn;
+
+ musicBtn.textContent=musicOn?"♫ MUSIC ON":"♫ MUSIC OFF";
+
+ if(musicOn&&playing)startMusic();
+
+ else stopMusic();
+
+ if(musicOn)initAudio();
+
+});
+
+soundBtn.addEventListener("click",()=>{
+
+ soundOn=!soundOn;
+
+ soundBtn.textContent=soundOn?"🔊 SFX ON":"🔇 SFX OFF";
+
+});
+
+// ---------- GAME STATE ----------
+
 function reset(){
-  bird = {x:90,y:H/2,vy:0,r:14}; // REAL radius hitbox
-  pipes=[];
-  frame=0;
-  score=0;
-  gravity=0.32;
-  scoreBoard.innerText=0;
+
+ bird={
+
+  x:112,y:300,vy:0,r:15,rotation:0,
+
+  wingPhase:0,wingAngle:0
+
+ };
+
+ pipes=[];
+
+ particles=[];
+
+ score=0;
+
+ frame=0;
+
+ worldTime=0;
+
+ groundOffset=0;
+
+ lastTime=0;
+
+ shake=0;
+
+ scoreBoard.textContent="0";
+
 }
 
-// ===== START =====
 function start(){
-  overlay.style.display="none";
-  reset();
-  playing=true;
-  audioCtx.resume();
-  loop();
+
+ initAudio();
+
+ reset();
+
+ playing=true;
+
+ overlay.style.display="none";
+
+ hint.textContent="TAP ANYWHERE TO FLY";
+
+ startMusic();
+
+ sfx(520,.15,"sine");
+
+ requestAnimationFrame(loop);
+
 }
 
-// ===== END =====
 function end(){
-  playing=false;
-  overlay.style.display="flex";
-  overlay.innerHTML=`
-    <h1>Game Over</h1>
-    <p>Score: ${score}</p>
-    <button onclick="start()">Restart</button>
-  `;
-  sound(120,0.3);
-}
 
-// ===== FLAP =====
-function flap(){
-  if(!playing) return;
-  bird.vy = -5.6;
-  sound(600,0.08);
-}
+ if(!playing)return;
 
-// ===== PIPE =====
-function addPipe(){
-  const gap = 150;
-  const top = 60 + Math.random()*(H/2.3);
+ playing=false;
 
-  pipes.push({
-    x:W,
-    w:60,
-    top,
-    bottom:top+gap,
-    passed:false
-  });
-}
+ stopMusic();
 
-// ===== PIPE DRAW =====
-function drawPipe(p){
-  ctx.fillStyle="#2ecc71";
-  ctx.fillRect(p.x,0,p.w,p.top);
-  ctx.fillRect(p.x,p.bottom,p.w,H);
+ sfx(125,.35,"triangle");
 
-  ctx.fillStyle="#27ae60";
-  ctx.fillRect(p.x-5,p.top-18,p.w+10,18);
-  ctx.fillRect(p.x-5,p.bottom,p.w+10,18);
-}
+ try{
 
-// ===== LOOP =====
-function loop(){
-  if(!playing) return;
-  requestAnimationFrame(loop);
+  if(score>best){
 
-  bgX -= 1;
-  if(bgX <= -W) bgX = 0;
+   best=score;
 
-  ctx.drawImage(bgImg,bgX,0,W,H);
-  ctx.drawImage(bgImg,bgX+W,0,W,H);
+   localStorage.setItem("flappyDove3DBest",String(best));
 
-  frame++;
-
-  if(frame%95===0) addPipe();
-
-  // physics
-  bird.vy += gravity;
-  bird.y += bird.vy;
-
-  // bird draw (centered circle hitbox)
-  ctx.drawImage(birdImg,bird.x-bird.r*2,bird.y-bird.r*2,bird.r*4,bird.r*4);
-
-  for(let i=pipes.length-1;i>=0;i--){
-    let p=pipes[i];
-    p.x -= 2.6;
-
-    drawPipe(p);
-
-    // SCORE
-    if(!p.passed && p.x < bird.x){
-      score++;
-      p.passed=true;
-      scoreBoard.innerText=score;
-      sound(500,0.1);
-    }
-
-    // ===== REAL FAIR COLLISION =====
-    const closestX = Math.max(p.x, Math.min(bird.x, p.x + p.w));
-
-    const hitTop =
-      bird.y - bird.r < p.top;
-
-    const hitBottom =
-      bird.y + bird.r > p.bottom;
-
-    const insideX =
-      closestX === bird.x || (bird.x > p.x && bird.x < p.x + p.w);
-
-    if(insideX && (hitTop || hitBottom)){
-      end();
-    }
-
-    if(p.x+p.w<0) pipes.splice(i,1);
   }
 
-  if(bird.y>H||bird.y<0) end();
+ }catch(e){}
+
+ overlay.innerHTML=`
+
+  <h1>${score>=10?"MASTER OF THE SKY":"FLIGHT ENDED"}</h1>
+
+  <div class="subtitle">
+
+   SCORE: <b>${score}</b><br>
+
+   PERSONAL BEST: <b>${best}</b><br><br>
+
+   ${score>=10?"A BEAUTIFUL FLIGHT. 🕊":"THE SKY IS CALLING YOU BACK."}
+
+  </div>
+
+  <button id="startBtn">↻ FLY AGAIN</button>
+
+  <div class="small">FLAPPY DOVE 3D · DARK SKY EDITION</div>
+
+ `;
+
+ document.getElementById("startBtn").addEventListener("click",start);
+
+ overlay.style.display="flex";
+
+ hint.textContent="";
+
 }
 
-// ===== CONTROLS =====
-startBtn.onclick=start;
+document.getElementById("startBtn").addEventListener("click",start);
 
-soundBtn.onclick=()=>{
-  soundOn=!soundOn;
-  soundBtn.innerText = soundOn ? "🔊 Sound" : "🔇 Muted";
-};
+function flap(){
+
+ if(!playing)return;
+
+ bird.vy=-6.0;
+
+ bird.wingAngle=-.95;
+
+ sfx(480,.07,"sine");
+
+ for(let i=0;i<3;i++){
+
+  particles.push({
+
+   x:bird.x-15,y:bird.y+4,
+
+   vx:-.6-Math.random()*1.2,
+
+   vy:(Math.random()-.5)*1.5,
+
+   life:20,size:1+Math.random()*2,
+
+   color:"#d7eaff"
+
+  });
+
+ }
+
+}
+
+canvas.addEventListener("pointerdown",e=>{
+
+ e.preventDefault();
+
+ flap();
+
+});
 
 window.addEventListener("keydown",e=>{
-  if(e.code==="Space"){e.preventDefault();flap();}
+
+ if(e.code==="Space"||e.code==="ArrowUp"){
+
+  e.preventDefault();
+
+  flap();
+
+ }
+
 });
-canvas.addEventListener("click",flap);
-canvas.addEventListener("touchstart",flap);
+
+// ---------- ATMOSPHERE ----------
+
+const stars=[];
+
+for(let i=0;i<95;i++){
+
+ stars.push({
+
+  x:Math.random()*W,y:Math.random()*520,
+
+  r:.4+Math.random()*1.3,
+
+  phase:Math.random()*Math.PI*2
+
+ });
+
+}
+
+const clouds=[
+
+ {x:20,y:150,s:1.0,speed:.18},
+
+ {x:280,y:240,s:.75,speed:.12},
+
+ {x:500,y:105,s:1.15,speed:.2},
+
+ {x:640,y:320,s:.8,speed:.1}
+
+];
+
+function drawSky(dt){
+
+ const sky=ctx.createLinearGradient(0,0,0,H);
+
+ sky.addColorStop(0,"#020613");
+
+ sky.addColorStop(.28,"#09172d");
+
+ sky.addColorStop(.55,"#172b49");
+
+ sky.addColorStop(.78,"#344963");
+
+ sky.addColorStop(1,"#111d2c");
+
+ ctx.fillStyle=sky;
+
+ ctx.fillRect(0,0,W,H);
+
+ // Moon glow
+
+ const moonGlow=ctx.createRadialGradient(320,145,5,320,145,150);
+
+ moonGlow.addColorStop(0,"#e6f3ff40");
+
+ moonGlow.addColorStop(.4,"#8bb8e51d");
+
+ moonGlow.addColorStop(1,"#7da9e500");
+
+ ctx.fillStyle=moonGlow;
+
+ ctx.fillRect(160,0,260,310);
+
+ // Moon with subtle shading
+
+ const moon=ctx.createRadialGradient(311,133,2,326,145,34);
+
+ moon.addColorStop(0,"#ffffff");
+
+ moon.addColorStop(.75,"#d8e7f7");
+
+ moon.addColorStop(1,"#8099b8");
+
+ ctx.fillStyle=moon;
+
+ ctx.beginPath();
+
+ ctx.arc(326,145,25,0,Math.PI*2);
+
+ ctx.fill();
+
+ // Stars
+
+ for(const s of stars){
+
+  const twinkle=.45+.45*Math.sin(worldTime*.035+s.phase);
+
+  ctx.globalAlpha=twinkle;
+
+  ctx.fillStyle="#e7f2ff";
+
+  ctx.beginPath();
+
+  ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+
+  ctx.fill();
+
+ }
+
+ ctx.globalAlpha=1;
+
+ // Moving dark clouds with depth
+
+ for(const c of clouds){
+
+  c.x-=c.speed*dt;
+
+  if(c.x<-160)c.x=W+150+Math.random()*100;
+
+  drawCloud(c.x,c.y,c.s);
+
+ }
+
+ // Distant mountain silhouettes
+
+ ctx.fillStyle="#202e43";
+
+ ctx.beginPath();
+
+ ctx.moveTo(0,470);
+
+ ctx.lineTo(45,400);ctx.lineTo(92,449);
+
+ ctx.lineTo(155,367);ctx.lineTo(217,446);
+
+ ctx.lineTo(278,393);ctx.lineTo(340,442);
+
+ ctx.lineTo(390,382);ctx.lineTo(420,420);
+
+ ctx.lineTo(420,625);ctx.lineTo(0,625);
+
+ ctx.closePath();ctx.fill();
+
+ // Middle ridge
+
+ const ridge=ctx.createLinearGradient(0,435,0,625);
+
+ ridge.addColorStop(0,"#253e50");
+
+ ridge.addColorStop(1,"#102c37");
+
+ ctx.fillStyle=ridge;
+
+ ctx.beginPath();
+
+ ctx.moveTo(0,500);
+
+ ctx.quadraticCurveTo(95,417,185,495);
+
+ ctx.quadraticCurveTo(290,420,420,485);
+
+ ctx.lineTo(420,625);ctx.lineTo(0,625);
+
+ ctx.closePath();ctx.fill();
+
+ // Foreground ridge
+
+ const near=ctx.createLinearGradient(0,500,0,625);
+
+ near.addColorStop(0,"#173c45");
+
+ near.addColorStop(1,"#081b29");
+
+ ctx.fillStyle=near;
+
+ ctx.beginPath();
+
+ ctx.moveTo(0,545);
+
+ ctx.quadraticCurveTo(100,485,205,540);
+
+ ctx.quadraticCurveTo(315,470,420,530);
+
+ ctx.lineTo(420,625);ctx.lineTo(0,625);
+
+ ctx.closePath();ctx.fill();
+
+ // Distant glowing windows on tiny hillside structures
+
+ for(let i=0;i<11;i++){
+
+  const x=(i*49+10)%420;
+
+  const y=514+(i%3)*18;
+
+  ctx.fillStyle=i%2?"#b9d8cb66":"#f1d6a055";
+
+  ctx.fillRect(x,y,3,4);
+
+ }
+
+}
+
+function drawCloud(x,y,s){
+
+ ctx.save();
+
+ ctx.translate(x,y);
+
+ ctx.scale(s,s);
+
+ // Cloud underside shadow
+
+ ctx.fillStyle="#091629b0";
+
+ ctx.beginPath();
+
+ ctx.ellipse(2,13,47,18,0,0,Math.PI*2);
+
+ ctx.ellipse(-22,4,22,18,0,0,Math.PI*2);
+
+ ctx.ellipse(0,-6,25,25,0,0,Math.PI*2);
+
+ ctx.ellipse(25,5,22,18,0,0,Math.PI*2);
+
+ ctx.fill();
+
+ // Moonlit upper edge
+
+ const cloudGrad=ctx.createLinearGradient(0,-25,0,24);
+
+ cloudGrad.addColorStop(0,"#b5c8df");
+
+ cloudGrad.addColorStop(.5,"#647b97");
+
+ cloudGrad.addColorStop(1,"#283a53");
+
+ ctx.fillStyle=cloudGrad;
+
+ ctx.beginPath();
+
+ ctx.ellipse(0,6,40,15,0,0,Math.PI*2);
+
+ ctx.ellipse(-21,1,19,16,0,0,Math.PI*2);
+
+ ctx.ellipse(0,-9,23,24,0,0,Math.PI*2);
+
+ ctx.ellipse(24,3,20,17,0,0,Math.PI*2);
+
+ ctx.fill();
+
+ ctx.restore();
+
+}
+
+// ---------- DIMENSIONAL PIPES ----------
+
+function pipeBody(x,y,w,h){
+
+ if(h<=0)return;
+
+ ctx.fillStyle="#030b13";
+
+ ctx.fillRect(x+7,y+5,w,h);
+
+ const g=ctx.createLinearGradient(x,0,x+w,0);
+
+ g.addColorStop(0,"#071a23");
+
+ g.addColorStop(.16,"#164451");
+
+ g.addColorStop(.35,"#4d8990");
+
+ g.addColorStop(.49,"#255c69");
+
+ g.addColorStop(.77,"#12333f");
+
+ g.addColorStop(1,"#050f1a");
+
+ ctx.fillStyle=g;
+
+ ctx.fillRect(x,y,w,h);
+
+ ctx.fillStyle="#a7e2e555";
+
+ ctx.fillRect(x+7,y,3,h);
+
+ ctx.fillStyle="#0008";
+
+ ctx.fillRect(x+w-7,y,7,h);
+
+ // Reflective vertical stripe
+
+ const shine=ctx.createLinearGradient(x+13,0,x+20,0);
+
+ shine.addColorStop(0,"#ffffff00");
+
+ shine.addColorStop(.5,"#e0ffff65");
+
+ shine.addColorStop(1,"#ffffff00");
+
+ ctx.fillStyle=shine;
+
+ ctx.fillRect(x+12,y,9,h);
+
+}
+
+function pipeCap(x,y,w,h){
+
+ const g=ctx.createLinearGradient(x,0,x+w,0);
+
+ g.addColorStop(0,"#07141e");
+
+ g.addColorStop(.2,"#497985");
+
+ g.addColorStop(.4,"#91b7be");
+
+ g.addColorStop(.62,"#38616e");
+
+ g.addColorStop(1,"#06111b");
+
+ ctx.fillStyle="#02070d";
+
+ ctx.fillRect(x-5,y+5,w+10,h);
+
+ ctx.fillStyle=g;
+
+ ctx.fillRect(x-5,y,w+10,h);
+
+ ctx.fillStyle="#d8f3ff7a";
+
+ ctx.fillRect(x-2,y+3,w+4,3);
+
+ ctx.fillStyle="#030b14";
+
+ ctx.fillRect(x-5,y+h-3,w+10,4);
+
+}
+
+function drawPipe(p){
+
+ const cap=21;
+
+ pipeBody(p.x,0,p.w,p.top-cap);
+
+ pipeBody(p.x,p.bottom+cap,p.w,GROUND-p.bottom-cap);
+
+ pipeCap(p.x,p.top-cap,p.w,cap);
+
+ pipeCap(p.x,p.bottom,p.w,cap);
+
+}
+
+// ---------- DOVE WINGS ----------
+
+function feather(x,y,length,width,angle,light,dark){
+
+ ctx.save();
+
+ ctx.translate(x,y);
+
+ ctx.rotate(angle);
+
+ const grad=ctx.createLinearGradient(0,-width,0,width);
+
+ grad.addColorStop(0,light);
+
+ grad.addColorStop(.48,"#f2f5fa");
+
+ grad.addColorStop(1,dark);
+
+ ctx.fillStyle=grad;
+
+ ctx.beginPath();
+
+ ctx.moveTo(0,0);
+
+ ctx.quadraticCurveTo(length*.3,-width*.7,length,-width*.18);
+
+ ctx.quadraticCurveTo(length*.65,width*.65,0,0);
+
+ ctx.fill();
+
+ ctx.strokeStyle="#b9c8d7";
+
+ ctx.lineWidth=.6;
+
+ ctx.beginPath();
+
+ ctx.moveTo(2,0);
+
+ ctx.quadraticCurveTo(length*.4,0,length,-width*.05);
+
+ ctx.stroke();
+
+ ctx.restore();
+
+}
+
+function drawWing(angle,side){
+
+ ctx.save();
+
+ ctx.rotate(angle);
+
+ const flip=side==="near"?1:-1;
+
+ ctx.scale(1,flip);
+
+ // Upper wing base
+
+ const wg=ctx.createLinearGradient(-15,-12,20,12);
+
+ wg.addColorStop(0,"#ffffff");
+
+ wg.addColorStop(.5,"#e7eef7");
+
+ wg.addColorStop(1,"#8c9eb4");
+
+ ctx.fillStyle=wg;
+
+ ctx.beginPath();
+
+ ctx.moveTo(-10,-5);
+
+ ctx.quadraticCurveTo(-19,-21,-4,-25);
+
+ ctx.quadraticCurveTo(17,-27,28,-8);
+
+ ctx.quadraticCurveTo(15,5,-5,12);
+
+ ctx.closePath();
+
+ ctx.fill();
+
+ ctx.strokeStyle="#8194a9";
+
+ ctx.lineWidth=1;
+
+ ctx.stroke();
+
+ // Individual flight feathers
+
+ for(let i=0;i<5;i++){
+
+  feather(-5+i*4,-11-i*.4,22-i*1.4,5,
+
+   -.3+i*.13,"#ffffff","#aab9cc");
+
+ }
+
+ ctx.restore();
+
+}
+
+// ---------- REAL-DOVE-INSPIRED BIRD ----------
+
+function drawBird(){
+
+ ctx.save();
+
+ ctx.translate(bird.x,bird.y);
+
+ ctx.rotate(bird.rotation);
+
+ // Atmospheric shadow beneath bird
+
+ ctx.fillStyle="#0005";
+
+ ctx.beginPath();
+
+ ctx.ellipse(1,20,19,5,0,0,Math.PI*2);
+
+ ctx.fill();
+
+ // Tail fan, layered feathers
+
+ for(let i=0;i<5;i++){
+
+  feather(-13,1+i*.5,19,4.5,
+
+   -.55+i*.23,"#f8fbff","#9eafc3");
+
+ }
+
+ // Far wing: feathered silhouette
+
+ drawWing(bird.wingAngle*.85,"far");
+
+ // Dove body with realistic shading
+
+ const body=ctx.createRadialGradient(-8,-10,2,1,3,29);
+
+ body.addColorStop(0,"#ffffff");
+
+ body.addColorStop(.25,"#f4f7fb");
+
+ body.addColorStop(.57,"#d6e0ec");
+
+ body.addColorStop(.82,"#91a5bb");
+
+ body.addColorStop(1,"#536c85");
+
+ ctx.fillStyle=body;
+
+ ctx.beginPath();
+
+ ctx.ellipse(0,2,22,15,0,0,Math.PI*2);
+
+ ctx.fill();
+
+ ctx.strokeStyle="#8a9db2";
+
+ ctx.lineWidth=.8;
+
+ ctx.stroke();
+
+ // Neck and head
+
+ const neck=ctx.createLinearGradient(0,-22,8,8);
+
+ neck.addColorStop(0,"#ffffff");
+
+ neck.addColorStop(.5,"#e5edf6");
+
+ neck.addColorStop(1,"#9eb0c3");
+
+ ctx.fillStyle=neck;
+
+ ctx.beginPath();
+
+ ctx.moveTo(1,2);
+
+ ctx.quadraticCurveTo(-2,-11,4,-20);
+
+ ctx.quadraticCurveTo(10,-26,17,-17);
+
+ ctx.quadraticCurveTo(22,-9,14,-2);
+
+ ctx.lineTo(10,6);
+
+ ctx.closePath();
+
+ ctx.fill();
+
+ // Subtle neck contour
+
+ ctx.strokeStyle="#a4b4c6";
+
+ ctx.lineWidth=.8;
+
+ ctx.beginPath();
+
+ ctx.moveTo(4,-9);
+
+ ctx.quadraticCurveTo(10,-5,14,-8);
+
+ ctx.stroke();
+
+ // Near wing with animated flapping motion
+
+ drawWing(bird.wingAngle,"near");
+
+ // Wing root feather details
+
+ ctx.strokeStyle="#b5c4d5";
+
+ ctx.lineWidth=1;
+
+ for(let i=0;i<3;i++){
+
+  ctx.beginPath();
+
+  ctx.moveTo(-11,-2+i*3);
+
+  ctx.quadraticCurveTo(-3,-9+i*3,6,-4+i*2);
+
+  ctx.stroke();
+
+ }
+
+ // Head
+
+ const head=ctx.createRadialGradient(9,-23,1,12,-17,13);
+
+ head.addColorStop(0,"#ffffff");
+
+ head.addColorStop(.6,"#edf3f9");
+
+ head.addColorStop(1,"#a5b5c7");
+
+ ctx.fillStyle=head;
+
+ ctx.beginPath();
+
+ ctx.ellipse(11,-17,12,11,0,0,Math.PI*2);
+
+ ctx.fill();
+
+ ctx.strokeStyle="#9aadc0";
+
+ ctx.lineWidth=.7;
+
+ ctx.stroke();
+
+ // Eye ring and dark pupil
+
+ ctx.fillStyle="#9caabd";
+
+ ctx.beginPath();
+
+ ctx.arc(17,-19,4.4,0,Math.PI*2);
+
+ ctx.fill();
+
+ ctx.fillStyle="#111c2d";
+
+ ctx.beginPath();
+
+ ctx.arc(17.4,-19,2.7,0,Math.PI*2);
+
+ ctx.fill();
+
+ ctx.fillStyle="#ffffff";
+
+ ctx.beginPath();
+
+ ctx.arc(18.1,-20,1,0,Math.PI*2);
+
+ ctx.fill();
+
+ // Small natural dove beak
+
+ const beak=ctx.createLinearGradient(20,-14,31,-8);
+
+ beak.addColorStop(0,"#5d7189");
+
+ beak.addColorStop(.5,"#aebbd0");
+
+ beak.addColorStop(1,"#526b86");
+
+ ctx.fillStyle=beak;
+
+ ctx.beginPath();
+
+ ctx.moveTo(20,-14);
+
+ ctx.lineTo(31,-11);
+
+ ctx.lineTo(21,-8);
+
+ ctx.closePath();
+
+ ctx.fill();
+
+ // Dark nostril
+
+ ctx.fillStyle="#26394d";
+
+ ctx.beginPath();
+
+ ctx.arc(23,-12,1,0,Math.PI*2);
+
+ ctx.fill();
+
+ // Gentle moonlight highlight
+
+ ctx.strokeStyle="#ffffffb8";
+
+ ctx.lineWidth=1.2;
+
+ ctx.beginPath();
+
+ ctx.ellipse(10,-20,6,5,-.4,Math.PI,Math.PI*1.8);
+
+ ctx.stroke();
+
+ ctx.restore();
+
+}
+
+// ---------- GROUND ----------
+
+function drawGround(dt){
+
+ const g=ctx.createLinearGradient(0,GROUND,0,H);
+
+ g.addColorStop(0,"#283f49");
+
+ g.addColorStop(.08,"#172e3b");
+
+ g.addColorStop(.15,"#101e2a");
+
+ g.addColorStop(1,"#050a13");
+
+ ctx.fillStyle=g;
+
+ ctx.fillRect(0,GROUND,W,H-GROUND);
+
+ // Glowing moonlit ground edge
+
+ ctx.fillStyle="#7dacc4";
+
+ ctx.fillRect(0,GROUND,W,2);
+
+ ctx.fillStyle="#d9f1ff45";
+
+ ctx.fillRect(0,GROUND+2,W,2);
+
+ groundOffset=(groundOffset+3*dt)%44;
+
+ // Perspective floor markings
+
+ for(let x=-44-groundOffset;x<W+44;x+=44){
+
+  ctx.fillStyle="#8faab61c";
+
+  ctx.beginPath();
+
+  ctx.moveTo(x,GROUND+30);
+
+  ctx.lineTo(x+17,GROUND+30);
+
+  ctx.lineTo(x+33,H);
+
+  ctx.lineTo(x+6,H);
+
+  ctx.closePath();
+
+  ctx.fill();
+
+  ctx.fillStyle="#c3e4ff16";
+
+  ctx.fillRect(x+7,GROUND+60,17,3);
+
+  ctx.fillRect(x+12,GROUND+110,20,3);
+
+ }
+
+}
+
+// ---------- PARTICLES ----------
+
+function updateParticles(dt){
+
+ for(let i=particles.length-1;i>=0;i--){
+
+  const p=particles[i];
+
+  p.x+=p.vx*dt;
+
+  p.y+=p.vy*dt;
+
+  p.life-=dt;
+
+  if(p.life<=0)particles.splice(i,1);
+
+ }
+
+}
+
+function drawParticles(){
+
+ for(const p of particles){
+
+  ctx.globalAlpha=Math.max(0,p.life/20);
+
+  ctx.fillStyle=p.color;
+
+  ctx.beginPath();
+
+  ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+
+  ctx.fill();
+
+ }
+
+ ctx.globalAlpha=1;
+
+}
+
+// ---------- PIPE GENERATION ----------
+
+function addPipe(){
+
+ const gap=165;
+
+ const top=75+Math.random()*255;
+
+ pipes.push({x:W+15,w:64,top,bottom:top+gap,passed:false});
+
+}
+
+// ---------- GAME LOOP ----------
+
+function loop(timestamp){
+
+ if(!playing)return;
+
+ requestAnimationFrame(loop);
+
+ const dt=lastTime?Math.min((timestamp-lastTime)/16.67,2):1;
+
+ lastTime=timestamp;
+
+ worldTime+=dt;
+
+ ctx.save();
+
+ if(shake>0){
+
+  ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+
+  shake=Math.max(0,shake-.5*dt);
+
+ }
+
+ drawSky(dt);
+
+ frame+=dt;
+
+ if(frame>=102){addPipe();frame=0}
+
+ // Gravity and wing animation
+
+ bird.vy+=.29*dt;
+
+ bird.y+=bird.vy*dt;
+
+ // Natural wing movement continues while flying.
+
+ // A tap gives a stronger upward flap.
+
+ bird.wingAngle+=((Math.sin(worldTime*.32)*.65)-bird.wingAngle)*.15*dt;
+
+ bird.rotation=Math.max(-.45,Math.min(.8,bird.vy*.07));
+
+ for(let i=pipes.length-1;i>=0;i--){
+
+  const p=pipes[i];
+
+  p.x-=2.65*dt;
+
+  drawPipe(p);
+
+  if(!p.passed&&p.x+p.w<bird.x){
+
+   p.passed=true;
+
+   score++;
+
+   scoreBoard.textContent=score;
+
+   sfx(700,.12,"sine");
+
+   for(let j=0;j<7;j++){
+
+    particles.push({
+
+     x:bird.x+8,y:bird.y,
+
+     vx:(Math.random()-.5)*3,
+
+     vy:(Math.random()-.5)*3,
+
+     life:20,size:1+Math.random()*2,
+
+     color:"#d7edff"
+
+    });
+
+   }
+
+  }
+
+  const overlapsX=bird.x+bird.r>p.x-5&&bird.x-bird.r<p.x+p.w+5;
+
+  if(overlapsX&&(bird.y-bird.r<p.top||bird.y+bird.r>p.bottom)){
+
+   shake=7;
+
+   end();
+
+   ctx.restore();
+
+   return;
+
+  }
+
+  if(p.x+p.w<-20)pipes.splice(i,1);
+
+ }
+
+ drawGround(dt);
+
+ updateParticles(dt);
+
+ drawParticles();
+
+ drawBird();
+
+ if(bird.y+bird.r>GROUND||bird.y-bird.r<0){
+
+  shake=7;
+
+  end();
+
+  ctx.restore();
+
+  return;
+
+ }
+
+ ctx.restore();
+
+}
+
+// ---------- INITIAL SCREEN ----------
+
+reset();
+
+drawSky(0);
+
+drawGround(0);
+
+drawBird();
 
 </script>
+
 </body>
+
 </html>
